@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live Cricket Scores</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f2;--panel:#fff;--ink:#17201a;--mute:#66705f;--line:#dfe3d6;--seam:#b3261e;--turf:#2f6b3f;--tint:#e8f0e6;--onacc:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#121712;--panel:#1a211b;--ink:#eef2e8;--mute:#9aa591;--line:#2c352d;--seam:#ef6a5f;--turf:#7cc28d;--tint:#243126;--onacc:#101410}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Instrument Sans",system-ui,sans-serif;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font:600 21px "Fraunces",Georgia,serif;margin:0}
+.ctl{display:flex;align-items:center;gap:12px;color:var(--mute);font-size:13px}
+button{font:inherit;color:inherit}
+#pause{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:5px 12px;cursor:pointer}
+#pause[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+:focus-visible{outline:2px solid var(--seam);outline-offset:2px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mute);margin-right:6px}
+.on .dot{background:var(--seam);animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.25}}
+#timer{position:absolute;left:0;bottom:-1px;height:2px;background:var(--seam);width:0}
+main{display:grid;grid-template-columns:290px 1fr;gap:20px;padding:20px 24px;max-width:1200px;margin:auto}
+@media(max-width:820px){main{grid-template-columns:1fr;padding:14px}header{padding:10px 14px}.list{flex-direction:row;overflow-x:auto;padding-bottom:4px}.item{min-width:230px}}
+.list{display:flex;flex-direction:column;gap:10px;align-self:start}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;cursor:pointer;text-align:left;width:100%}
+.item.sel{border-color:var(--turf);background:var(--tint)}
+.item b{display:block;margin:2px 0 4px}.row{display:flex;justify-content:space-between;color:var(--mute);font-size:13px}.row i{font-style:normal;color:var(--ink)}
+.tag{font-size:12px;font-weight:600}.tag.LIVE{color:var(--seam)}.tag.COMPLETED,.tag.BREAK{color:var(--mute)}
+.board{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:22px}
+.meta{color:var(--mute);font-size:14px}
+.score{font:600 64px/1 "Fraunces",Georgia,serif;margin:8px 0 4px;display:inline-block}
+.score small{font-size:20px;color:var(--mute);font-weight:600;margin-left:8px}
+.bump{animation:bump .7s ease-out}
+@keyframes bump{0%{color:var(--seam);transform:translateY(-3px)}100%{color:inherit;transform:none}}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:10px 0 4px}.bar>div{height:100%;background:var(--turf);transition:width .6s}
+.bar.chase>div{background:var(--seam)}
+.need{font-weight:600;color:var(--seam);margin-top:6px}.res{font-weight:600;color:var(--turf);margin-top:6px}
+.over{display:flex;align-items:center;gap:8px;margin:16px 0 0;flex-wrap:wrap}.over span.l{color:var(--mute);font-size:13px;margin-right:4px}
+.c{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:13px;border:1px solid var(--line)}
+.c.d{color:var(--mute)}.c.b{background:var(--turf);color:var(--onacc);border-color:var(--turf)}.c.w{background:var(--seam);color:var(--onacc);border-color:var(--seam)}
+.c.new{animation:pop .5s ease-out}@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:none}}
+.tabs{display:none;gap:6px;margin:18px 0 0}
+.tabs button{flex:1;border:1px solid var(--line);background:none;border-radius:6px;padding:7px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg)}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:24px;margin-top:22px}
+@media(max-width:820px){.tabs{display:flex}.grid{grid-template-columns:1fr;margin-top:14px}[data-tab=card] .pcomm,[data-tab=comm] .pcard{display:none}.score{font-size:52px}}
+h2{font:600 16px "Fraunces",Georgia,serif;margin:0 0 8px}
+.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:6px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--mute);font-weight:600}
+tr.on td:first-child{font-weight:600;color:var(--turf)}tr.out td{color:var(--mute)}tr.cur td{background:var(--tint)}
+ol{list-style:none;margin:0;padding:0;max-height:440px;overflow:auto}
+li{padding:7px 8px;border-bottom:1px solid var(--line);font-size:14px;display:flex;gap:10px}li b{color:var(--mute);font-weight:600;min-width:34px}
+li.hl{color:var(--seam);font-weight:600;background:var(--tint)}li.fresh{animation:slide .5s ease-out}@keyframes slide{from{opacity:0;transform:translateY(-6px)}}
+.facts{display:flex;gap:26px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:14px}.facts span{display:block;color:var(--mute);font-size:13px}
+.empty{color:var(--mute)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><h1>Live Cricket Scores</h1>
+ <div class="ctl"><span id="conn">Connecting…</span><button id="pause" aria-pressed="false">Pause updates</button></div>
+ <div id="timer"></div></header>
+<main>
+  <nav class="list" id="list" aria-label="Matches"></nav>
+  <section id="detail" class="board" aria-live="polite"><p class="empty">Loading matches…</p></section>
+</main>
+<script>
+const matches = {}; let sel = null, paused = false, tab = 'card', tickMs = 6000;
+const last = {}, seen = {}, $ = id => document.getElementById(id);
+const fmtOv = b => Math.floor(b/6)+"."+(b%6);
+/*INIT*/
+async function init(){
+  (await (await fetch('/api/matches')).json()).forEach(m => matches[m.id]=m);
+  sel = Object.keys(matches)[0]; render();
+  const es = new EventSource('/api/stream');
+  es.onopen = () => { $('conn').innerHTML='<span class="dot"></span>Live'; $('conn').className='on'; };
+  es.onerror = () => { $('conn').textContent='Reconnecting…'; $('conn').className=''; };
+  es.addEventListener('match', e => { const m = JSON.parse(e.data); matches[m.id]=m; if(m.id===sel) restartTimer(); if(!paused) render(); });
+}
+/*ENDINIT*/
+function restartTimer(){const t=$('timer');t.style.transition='none';t.style.width='0';void t.offsetWidth;t.style.transition='width '+tickMs+'ms linear';t.style.width='100%';}
+$('pause').onclick = e => { paused=!paused; e.target.setAttribute('aria-pressed',paused); e.target.textContent=paused?'Resume updates':'Pause updates'; if(!paused) render(); };
+
+function chip(t){
+  if(/WICKET/.test(t)) return ['W','w']; if(/SIX/.test(t)) return ['6','b']; if(/FOUR/.test(t)) return ['4','b'];
+  if(/dot/.test(t)) return ['•','d']; return [(t.match(/(\d) run/)||[0,'1'])[1],'r'];
+}
+function thisOver(m){
+  const i = m.innings[m.current]; if(!i.balls) return {n:0,chips:[]};
+  const idx = Math.floor((i.balls-1)/6), n = i.balls - idx*6;
+  const ls = m.commentary.filter(c => /^\d+\.\d  /.test(c)).slice(0,n).reverse();
+  return {n:idx+1, chips: ls.map(l => chip(l.slice(5)))};
+}
+function status(m){ return m.status==='COMPLETED'?'COMPLETED':'LIVE'; }
+
+function render(){
+  $('list').innerHTML = Object.values(matches).map(m => {
+    const lines = m.innings.filter((x,k)=>k<=m.current && x.balls>0).map(x=>`<div class="row"><span>${x.battingTeam}</span><i>${x.runs}/${x.wickets} (${x.overs})</i></div>`).join('');
+    return `<button class="item ${m.id===sel?'sel':''}" data-id="${m.id}" aria-pressed="${m.id===sel}">
+      <span class="tag ${status(m)}">${m.status==='LIVE'?'Live':'Final'} · ${m.overs} overs</span><b>${m.title}</b>${lines}</button>`;
+  }).join('');
+  document.querySelectorAll('.item').forEach(b => b.onclick = () => { sel=b.dataset.id; restartTimer(); render(); });
+  const m = matches[sel]; if(!m) return;
+  const i = m.innings[m.current], left = m.overs*6 - i.balls, chasing = m.current===1 && m.status==='LIVE';
+  const key = i.runs+'/'+i.wickets+'/'+m.current, bump = last[m.id] && last[m.id]!==key ? 'bump' : ''; last[m.id]=key;
+  const need = m.target - i.runs, rrr = left>0 ? (need*6/left).toFixed(2) : '0.00';
+  const first = m.innings[0];
+  const line = m.status==='COMPLETED' ? `<div class="res">${m.result}</div>`
+    : chasing ? `<div class="need">${i.battingTeam} need ${need} from ${left} balls · required rate ${rrr}</div>`
+    : `<div class="meta">Projected ${Math.round(i.runRate*m.overs)} at the current rate</div>`;
+  const pct = chasing ? Math.min(100, i.runs/m.target*100) : i.balls/(m.overs*6)*100;
+  const ov = thisOver(m), fresh = seen[m.id] !== i.balls; seen[m.id] = i.balls;
+  const bat = i.batters.slice(0,Math.min(i.nextIn,11)).map((b,k) => {
+    const live = m.status==='LIVE' && !b.out && (k===i.striker||k===i.nonStriker);
+    return `<tr class="${b.out?'out':live?'on':''}"><td>${b.name}${live&&k===i.striker?' *':''}${b.out?' (out)':''}</td><td>${b.runs}</td><td>${b.balls}</td><td>${b.fours}</td><td>${b.sixes}</td><td>${b.strikeRate.toFixed(1)}</td></tr>`;}).join('');
+  const bowl = i.bowlers.filter(b=>b.balls>0).map((b,k) => `<tr class="${m.status==='LIVE'&&i.bowlers[i.bowler]===b?'cur':''}"><td>${b.name}</td><td>${b.overs}</td><td>${b.runs}</td><td>${b.wickets}</td><td>${b.economy.toFixed(2)}</td></tr>`).join('');
+  const topBat = [...m.innings.flatMap(x=>x.batters)].sort((a,b)=>b.runs-a.runs)[0];
+  const topBowl = [...m.innings.flatMap(x=>x.bowlers)].sort((a,b)=>b.wickets-a.wickets||a.runs-b.runs)[0];
+  const comm = m.commentary.slice(0,30).map((c,k) => { const mm=c.match(/^(\d+\.\d)  (.*)/);
+    return `<li class="${/WICKET|SIX|FOUR/.test(c)?'hl':''} ${fresh&&k===0?'fresh':''}"><b>${mm?mm[1]:'•'}</b><span>${mm?mm[2]:c}</span></li>`; }).join('');
+  $('detail').dataset.tab = tab;
+  $('detail').innerHTML = `
+    <div class="meta">${m.title} · ${m.venue}</div>
+    <div class="score ${bump}">${i.runs}/${i.wickets}<small>${i.overs} / ${m.overs} ov · RR ${i.runRate.toFixed(2)}</small></div>
+    <div class="meta">${i.battingTeam} ${m.current===0?'batting first':'chasing '+m.target}</div>
+    <div class="bar ${chasing?'chase':''}" role="progressbar" aria-valuenow="${Math.round(pct)}" aria-valuemin="0" aria-valuemax="100"><div style="width:${pct}%"></div></div>
+    ${line}
+    ${ov.chips.length?`<div class="over"><span class="l">Over ${ov.n}</span>${ov.chips.map((c,k)=>`<span class="c ${c[1]} ${fresh&&k===ov.chips.length-1?'new':''}">${c[0]}</span>`).join('')}</div>`:''}
+    <div class="tabs" role="tablist"><button role="tab" aria-selected="${tab==='card'}" data-t="card">Scorecard</button><button role="tab" aria-selected="${tab==='comm'}" data-t="comm">Commentary</button></div>
+    <div class="grid">
+      <div class="pcard"><h2>Batting · ${i.battingTeam}</h2><div class="wrap"><table><tr><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>${bat}</table></div>
+        <h2 style="margin-top:18px">Bowling · ${i.bowlingTeam}</h2><div class="wrap"><table><tr><th>Bowler</th><th>O</th><th>R</th><th>W</th><th>Econ</th></tr>${bowl||'<tr><td colspan=5 class="empty">Waiting for the first ball</td></tr>'}</table></div></div>
+      <div class="pcomm"><h2>Commentary</h2><ol>${comm}</ol></div>
+    </div>
+    <div class="facts">
+      ${m.current===1?`<div><span>${first.battingTeam} innings</span>${first.runs}/${first.wickets} (${first.overs})</div>`:''}
+      ${topBat&&topBat.runs?`<div><span>Top scorer</span>${topBat.name} ${topBat.runs} (${topBat.balls})</div>`:''}
+      ${topBowl&&topBowl.wickets?`<div><span>Best bowling</span>${topBowl.name} ${topBowl.wickets}/${topBowl.runs}</div>`:''}
+    </div>`;
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab=b.dataset.t; render(); });
+}
+init();
+</script>
+</body>
+</html>
